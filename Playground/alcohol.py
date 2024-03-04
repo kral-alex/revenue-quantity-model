@@ -21,12 +21,12 @@ class Keys(StrEnum):
 using_columns = ['Date', 'Store Number', 'Vendor Number', 'Item Number', 'State Bottle Retail', 'Sale (Dollars)', 'Bottles Sold', 'Volume Sold (Liters)']
 
 PATH = '../Data/Iowa_Liquor_Sales.csv'
-df_reader = pd.read_csv(PATH,
+print(type(df_reader := pd.read_csv(PATH,
                         #na_filter=True,
                         parse_dates=[Keys.DATE],
                         dtype={Keys.STORE: str, Keys.VENDOR: str, Keys.ITEM: str, Keys.PRICE: float, Keys.QUANTITY: int, Keys.VOLUME: float},
                         usecols=using_columns,
-                        chunksize=1000)
+                        chunksize=1000)))
 
 #df2_reader = pandas.read_csv('/Users/alex/Downloads/Iowa_Liquor_Sales.csv', chunksize=1000)
 
