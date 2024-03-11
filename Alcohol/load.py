@@ -55,9 +55,9 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
 @numba.njit()
 def consecutive_pythonic(values: np.ndarray[2, np.dtype[bool]]) -> np.ndarray[2, np.dtype[int]]:
     new = np.zeros_like(values, dtype=np.uint)
-    for ix in range(values.shape[0]):
+    for iy in range(values.shape[1]):
         current_count = 0
-        for iy in range(values.shape[1]):
+        for ix in range(values.shape[0]):
             if values[ix, iy] == values[ix, iy]:
                 current_count += 1
                 new[ix, iy] = current_count
