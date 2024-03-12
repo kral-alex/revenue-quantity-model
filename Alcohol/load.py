@@ -39,7 +39,11 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
                                    aggfunc={price_column: 'mean', quantity_column: 'sum'}, dropna=True).sort_index(axis=1)
     df_price = pivoted_joint[price_column]
     df_quantity = pivoted_joint[quantity_column]
-    return PriceQuantity(price=df_price.to_numpy(), quantity=df_quantity.to_numpy())
+    return PriceQuantity(
+        price=df_price.to_numpy(),
+        quantity=df_quantity.to_numpy(),
+        header=df_price.columns.values,
+        index=df_price.index.to_numpy(dtype=np.datetime64))
 
 
 #
@@ -55,7 +59,7 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
 #
 
 def main():
-    data_pd = load_alcohol_table().read(29_000_000)
+    data_pd = load_alcohol_table().read(2_000_000)
     pq = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
     caching.save(pq, '0')
 
