@@ -3,6 +3,7 @@ import numpy.typing as npt
 
 from Processing.time_series import PriceQuantity
 
+
 def skip_demean(array: npt.ArrayLike, period: int, offset: int = 0) -> npt.NDArray:
     condition = ~(np.arange(offset, len(array) + offset) % period).astype(bool)
     mean = np.mean(array, where=condition)
@@ -17,17 +18,18 @@ def skip_demean_quantity(pq: PriceQuantity, period: int) -> PriceQuantity:
 
 
 def shift_price(pq: PriceQuantity, shift_amount: int) -> PriceQuantity:
-    new_price = np.roll(pq.price, shift_amount)[shift_amount:]
-    new_quantity = pq.quantity[shift_amount:]
-    return PriceQuantity(price=new_price, quantity=new_quantity)
+    new_price = np.roll(pq.price, shift_amount)
+    if shift_amount >= 0:
+        return PriceQuantity(price=new_price[shift_amount:], quantity=pq.quantity[shift_amount:])
+    return PriceQuantity(price=new_price[:shift_amount], quantity=pq.quantity[:shift_amount])
 
 
-def test():
-    array = np.array([1, 2, 1, 4, 1, 6, 1, 4])
-    print(skip_demean(array, 2))
-    print(skip_demean(array, 2, 1))
-    print(skip_demean_all(array, 2))
+# def test():
+    # array = np.array([1, 2, 1, 4, 1, 6, 1, 4])
+    # print(skip_demean(array, 2))
+    # print(skip_demean(array, 2, 1))
+    # print(skip_demean_quantity(array, 2))
 
 
 if __name__ == '__main__':
-    test()
+    pass

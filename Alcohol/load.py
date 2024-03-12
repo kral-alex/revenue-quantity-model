@@ -2,11 +2,13 @@ from enum import StrEnum
 import warnings
 
 import numpy as np
-import numba
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import pandas as pd
+
+import caching
+from Processing.time_series import PriceQuantity
 
 PATH = '../Data/Iowa_Liquor_Sales.csv'
 use_columns = ['Date', 'Store Number', 'Vendor Number', 'Item Number', 'State Bottle Retail', 'Sale (Dollars)', 'Bottles Sold',
@@ -32,12 +34,12 @@ def load_alcohol_table(chunksize: int = 1000) -> pd.io.parsers.readers.TextFileR
                        chunksize=chunksize)
 
 
-def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys, quantity_column: Keys) -> (np.ndarray, np.ndarray):
+def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys, quantity_column: Keys) -> PriceQuantity:
     pivoted_joint = df.pivot_table(index=pd.Grouper(key=Keys.DATE, freq='1ME'), columns=by_column, values=[price_column, quantity_column],
                                    aggfunc={price_column: 'mean', quantity_column: 'sum'}, dropna=True).sort_index(axis=1)
     df_price = pivoted_joint[price_column]
     df_quantity = pivoted_joint[quantity_column]
-    return df_price.to_numpy(), df_quantity.to_numpy()
+    return PriceQuantity(price=df_price.to_numpy(), quantity=df_quantity.to_numpy())
 
 
 #
@@ -52,18 +54,14 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
 #                           aggfunc='sum', dropna=True).sort_index(axis=1).to_numpy()
 #
 
-@numba.njit()
-def consecutive_pythonic(values: np.ndarray[2, np.dtype[bool]]) -> np.ndarray[2, np.dtype[int]]:
-    new = np.zeros_like(values, dtype=np.uint)
-    for iy in range(values.shape[1]):
-        current_count = 0
-        for ix in range(values.shape[0]):
-            if values[ix, iy] == values[ix, iy]:
-                current_count += 1
-                new[ix, iy] = current_count
-            else:
-                current_count = 0
-    return new
+def main():
+    data_pd = load_alcohol_table().read(29_000_000)
+    pq = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
+    caching.save(pq, '0')
+
+
+if __name__ == '__main__':
+    main()
 
 
 def test():
@@ -77,21 +75,3 @@ def test():
     # data between Jan 2012 and Jan 2024 including, so 145 months (should work with > 10 mil input rows)
     # assert price_item.shape[0] == 145
 
-    consecutive = consecutive_pythonic(price_item.transpose()).transpose()
-    print(consecutive)
-    longest_in_column: np.ndarray = consecutive.argmax(axis=0)
-    print(np.sort(longest_in_column)[-9:])
-
-
-if __name__ == '__main__':
-    test()
-
-    # import time
-    # start = time.perf_counter()
-    # aggregate_pivot_joint(df, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
-    # time1 = time.perf_counter()
-    # aggregate_pivot_price(df, Keys.ITEM, Keys.PRICE)
-    # aggregate_pivot_quantity(df, Keys.ITEM, Keys.QUANTITY)
-    # time2 = time.perf_counter()
-    # print(time1 - start)
-    # print(time2 - time1)

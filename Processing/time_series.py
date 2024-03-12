@@ -8,23 +8,31 @@ import numba
 class PriceQuantity:
     price: np.ndarray[2, np.dtype[float]]
     quantity: np.ndarray[2, np.dtype[np.uint]]
+    header: np.ndarray[1, np.dtype[str]]
+    index: np.ndarray[1, np.dtype[np.datetime64]]
+
+    def __len__(self):
+        return len(self.price)
+
+    def __getitem__(self, val):
+        return PriceQuantity(self.price[val], self.quantity[val])
 
 
 class TimeSeries:
-    def __init__(self, x_data: np.ndarray[2, np.dtype[float]], y_data: np.ndarray[2, np.dtype[np.uint]]):
-        self.x = x_data
-        self.y = y_data
-        consecutive = TimeSeries.consecutive_axis1(self.x)  # .astype(dtype=np.bool_))
+    def __init__(self, pq: PriceQuantity):
+        assert pq.quantity.shape == pq.price.shape
+        self.pq = pq
+        consecutive = TimeSeries.consecutive_axis1(self.pq.price)  # .astype(dtype=np.bool_))
         self._consecutive_ranges = self.get_consecutive_ranges(consecutive)
 
     def get_nth_longest(self, n) -> PriceQuantity:
         row = self._consecutive_ranges[-1 - n]
         return PriceQuantity(
-            self.x[
+            self.pq.price[
                row[1]:row[2],
                row[0],
             ],
-            self.y[
+            self.pq.quantity[
                row[1]:row[2],
                row[0],
             ]
