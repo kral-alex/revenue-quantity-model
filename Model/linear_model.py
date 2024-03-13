@@ -52,7 +52,7 @@ def last_change_with_time_slope(pq, min_count: int = 2, max_count: int = np.inf)
 
     d_price = pq.price[middle] - pq.price[middle - 1]
 
-    return d_quantity_t / (2 * take_count), d_quantity_p / d_price
+    return d_quantity_t / take_count, d_quantity_p / d_price
 
 
 EPSILON = 1e-9
@@ -97,6 +97,7 @@ def linear_model_slope(pq: PriceQuantity, max_count: int = None) -> float:
 def linear_model_with_time_slope(pq: PriceQuantity, max_count: int = None) -> (float, float):
     if max_count:
         pq = pq[-max_count:]
+
     x_train = np.concatenate(
         (
             np.expand_dims(np.arange(0, len(pq.price)), axis=1),

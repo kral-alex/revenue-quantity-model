@@ -67,7 +67,6 @@ class PriceQuantity:
 
 class TimeSeries:
     def __init__(self, pq: PriceQuantity):
-        assert pq.quantity.shape == pq.price.shape
         self.pq = pq
         consecutive = TimeSeries.consecutive_axis1(self.pq.price)  # .astype(dtype=np.bool_))
         self._consecutive_ranges = self.get_consecutive_ranges(consecutive)
