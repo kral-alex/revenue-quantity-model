@@ -59,7 +59,7 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
 #
 
 def main():
-    data_pd = load_alcohol_table().read(2_000_000)
+    data_pd = load_alcohol_table().read(29_000_000)
     pq = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
     caching.save(pq, '0')
 

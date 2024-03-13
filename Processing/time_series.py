@@ -55,6 +55,15 @@ class PriceQuantity:
             return new_pq[shift_amount:]
         return new_pq[:shift_amount]
 
+    @classmethod
+    def bin_price_absolute(cls, pq, bin_size: float):
+        return cls(
+            price=np.floor(pq.price / bin_size) * bin_size,
+            quantity=pq.quantity,
+            index=pq.index,
+            header=pq.header
+        )
+
 
 class TimeSeries:
     def __init__(self, pq: PriceQuantity):
