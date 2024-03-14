@@ -1,13 +1,12 @@
 import numpy as np
 
-from Processing.time_series import PriceQuantity
+from .time_series import PriceQuantity
 
 
 class NotEnoughDataError(ValueError):
     pass
 
 
-# can be made to take asymmetric mean with weights
 def last_change_slope(pq: PriceQuantity, min_count: int = 1, max_count: int = np.inf) -> float:
     len_left, middle, len_right = find_change_range(pq)
     if min(len_left, len_right) < min_count:
