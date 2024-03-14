@@ -2,16 +2,14 @@ import os
 
 import numpy as np
 
-from Processing.time_series import PriceQuantity
-
-PATH = "./Caches/"
+from Processing import PriceQuantity
 
 
-def save(pq: PriceQuantity, identifier: str) -> None:
-    np.savetxt(f"{PATH}{identifier}_P.csv", pq.price, delimiter=",")
-    np.savetxt(f"{PATH}{identifier}_Q.csv", pq.quantity, delimiter=",")
-    np.savetxt(f"{PATH}{identifier}_H.csv", pq.header, delimiter=",", fmt="%s")
-    np.savetxt(f"{PATH}{identifier}_I.csv", pq.index, delimiter=",", fmt="%s")
+def save(pq: PriceQuantity, path: os.path, identifier: str) -> None:
+    np.savetxt(os.path.join(path, f"{identifier}_P.csv"), pq.price, delimiter=",")
+    np.savetxt(os.path.join(path, f"{identifier}_Q.csv"), pq.quantity, delimiter=",")
+    np.savetxt(os.path.join(path, f"{identifier}_H.csv"), pq.header, delimiter=",", fmt="%s")
+    np.savetxt(os.path.join(path, f"{identifier}_I.csv"), pq.index, delimiter=",", fmt="%s")
 
 
 def load(

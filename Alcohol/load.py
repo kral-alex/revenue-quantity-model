@@ -7,8 +7,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=DeprecationWarning)
     import pandas as pd
 
-import caching
-from Processing.time_series import PriceQuantity
+from Processing import PriceQuantity
 
 PATH = '../Data/Iowa_Liquor_Sales.csv'
 use_columns = ['Date', 'Store Number', 'Vendor Number', 'Item Number', 'State Bottle Retail', 'Sale (Dollars)', 'Bottles Sold',
@@ -59,9 +58,11 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
 #
 
 def main():
+    PATH = "./Caches/"
+    import caching
     data_pd = load_alcohol_table().read(29_000_000)
     pq = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
-    caching.save(pq, '0')
+    caching.save(pq, path=PATH, identifier='0')
 
 
 if __name__ == '__main__':
