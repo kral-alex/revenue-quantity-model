@@ -63,10 +63,9 @@ class PriceQuantity:
             header=pq.header
         )
 
-    def draw_scatter_graph(self, *, label=None):
+    def draw_scatter_graph(self, ax1, *, label=None):
         if label is None:
             label = f'Price Quantity {self.header}'
-        fig, ax1 = plt.subplots()
         ax1.set_title(label)
         ax1.set_xlabel("month #")
 
@@ -76,7 +75,7 @@ class PriceQuantity:
 
         ax1.set_ylabel("price [$]")
         ax2.set_ylabel("quantity")
-        return fig
+        return ax1, ax2
 
     @staticmethod
     def skip_demean(array: npt.ArrayLike, period: int, offset: int = 0) -> npt.NDArray:
