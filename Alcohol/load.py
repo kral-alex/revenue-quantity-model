@@ -46,18 +46,6 @@ def aggregate_pivot_joint(df: pd.DataFrame, by_column: Keys, price_column: Keys,
     )
 
 
-#
-# pivoting two times slower than once and splitting
-# def aggregate_pivot_price(df: pd.DataFrame, by_column: Keys, price_column: Keys) -> np.ndarray:
-#     return df.pivot_table(index=pd.Grouper(key=Keys.DATE, freq='1ME'), columns=by_column, values=price_column,
-#                           aggfunc='mean', dropna=True).sort_index(axis=1).to_numpy()
-#
-#
-# def aggregate_pivot_quantity(df: pd.DataFrame, by_column: Keys, quantity_column: Keys) -> np.ndarray:
-#     return df.pivot_table(index=pd.Grouper(key=Keys.DATE, freq='1ME'), columns=by_column, values=quantity_column,
-#                           aggfunc='sum', dropna=True).sort_index(axis=1).to_numpy()
-#
-
 def main():
     PATH = "./Caches/"
     import caching
@@ -68,16 +56,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-def test():
-    df_reader = load_alcohol_table()
-    df = df_reader.read(5_000_000)
-    print(df[Keys.DATE].max(), df[Keys.DATE].min())
-    price_item, quantity_item = aggregate_pivot_joint(df, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
-    print(price_item)
-    print(quantity_item)
-    print(price_item.shape)
-    # data between Jan 2012 and Jan 2024 including, so 145 months (should work with > 10 mil input rows)
-    # assert price_item.shape[0] == 145
-
