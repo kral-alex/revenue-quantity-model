@@ -17,4 +17,6 @@ print(df.groupby('P-P2').groups.keys())
 print(df.groupby('P-P3').groups.keys())
 print(df.groupby('P-P4').groups.keys())
 
+# price does not change
+
 

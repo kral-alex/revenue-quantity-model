@@ -7,9 +7,9 @@ from Processing.time_series import TimeSeries
 
 def main():
     data_pd = load_alcohol_table().read(28_000_000)
-    price, quantity = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
+    pq = aggregate_pivot_joint(data_pd, Keys.ITEM, Keys.PRICE, Keys.QUANTITY)
 
-    ts = TimeSeries(price, quantity)
+    ts = TimeSeries(pq)
     longest_ts = ts.get_nth_longest(0)
     top_5 = ts.get_n_longest(10)
 
