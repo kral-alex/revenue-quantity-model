@@ -2,14 +2,14 @@ import os
 
 import numpy as np
 
-from Processing import PriceQuantity
+from Processing import TimeSeries
 
 
-def save(pq: PriceQuantity, path: os.path, identifier: str) -> None:
-    np.savetxt(os.path.join(path, f"{identifier}_P.csv"), pq.price, delimiter=",")
-    np.savetxt(os.path.join(path, f"{identifier}_Q.csv"), pq.quantity, delimiter=",")
-    np.savetxt(os.path.join(path, f"{identifier}_H.csv"), pq.header, delimiter=",", fmt="%s")
-    np.savetxt(os.path.join(path, f"{identifier}_I.csv"), pq.index, delimiter=",", fmt="%s")
+def save(ts: TimeSeries, path: os.path, identifier: str) -> None:
+    np.savetxt(os.path.join(path, f"{identifier}_P.csv"), ts.price, delimiter=",")
+    np.savetxt(os.path.join(path, f"{identifier}_Q.csv"), ts.quantity, delimiter=",")
+    np.savetxt(os.path.join(path, f"{identifier}_H.csv"), ts.header, delimiter=",", fmt="%s")
+    np.savetxt(os.path.join(path, f"{identifier}_I.csv"), ts.index, delimiter=",", fmt="%s")
 
 
 def load(
@@ -20,7 +20,7 @@ def load(
         path_q_override: os.path = None,
         path_h_override: os.path = None,
         path_i_override: os.path = None,
-) -> PriceQuantity:
+) -> TimeSeries:
     path_p = os.path.join(dir_path, f"{identifier}_P.csv") if path_p_override is None else path_p_override
     path_q = os.path.join(dir_path, f"{identifier}_Q.csv") if path_q_override is None else path_q_override
     path_h = os.path.join(dir_path, f"{identifier}_H.csv") if path_h_override is None else path_h_override
@@ -45,5 +45,5 @@ def load(
         i = None
         print("File for indices not found.")
 
-    return PriceQuantity(p, q, h, i)
+    return TimeSeries(p, q, h, i)
 

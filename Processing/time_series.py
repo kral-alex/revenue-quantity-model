@@ -5,23 +5,46 @@ from .price_quantity import PriceQuantity
 
 
 class TimeSeries:
-    def __init__(self, pq: PriceQuantity):
-        self.pq = pq
-        consecutive = TimeSeries.consecutive_axis1(self.pq.price)  # .astype(dtype=np.bool_))
+    def __init__(self,
+                 price: np.ndarray[2, np.dtype[float]],
+                 quantity: np.ndarray[2, np.dtype[np.uint]],
+                 header: np.ndarray[1, np.dtype[str]] | None,
+                 index: np.ndarray[1, np.dtype[np.datetime64]] | None
+                 ):
+        self.price: np.ndarray[2, np.dtype[float]] = price
+        self.quantity: np.ndarray[2, np.dtype[np.uint]] = quantity
+        self.header: np.ndarray[1, np.dtype[str]] | None = header
+        self.index: np.ndarray[1, np.dtype[np.datetime64]] | None = index
+
+        consecutive = TimeSeries.consecutive_axis1(self.price)
         self._consecutive_ranges = self.get_consecutive_ranges(consecutive)
+
+    def __getitem__(self, val):
+        if isinstance(val, slice):
+            return TimeSeries(
+                price=self.price[val],
+                quantity=self.quantity[val],
+                header=self.header,
+                index=self.index[val]
+            )
+        if isinstance(val, tuple) and len(val) == 2:
+            r_slice = val[0]
+            c_slice = val[1]
+            return PriceQuantity(
+                price=self.price[val],
+                quantity=self.quantity[val],
+                header=self.header[c_slice] if self.header is not None else None,
+                index=self.index[r_slice] if self.index is not None else None
+            )
+        else:
+            raise IndexError(f'Index {val} out of range for shape {self.price.shape} with {len(self.price.shape)} dimensions')
 
     def get_nth_longest(self, n) -> PriceQuantity:
         row = self._consecutive_ranges[-1 - n]
-        return self.pq[
+        return self[
                row[1]:row[2],
                row[0],
             ]
-
-    def get_n_longest(self, n) -> list[PriceQuantity]:
-        longest = []
-        for i in range(n):
-            longest.append(self.get_nth_longest(i))
-        return longest
 
     @staticmethod
     @numba.njit()
