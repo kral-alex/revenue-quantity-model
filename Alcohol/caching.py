@@ -1,8 +1,15 @@
 import os
+import logging
 
 import numpy as np
 
 from Processing import TimeSeries
+
+logger = logging.getLogger(__name__)
+
+
+class IncompatibleDataShape(ValueError):
+    pass
 
 
 def save(ts: TimeSeries, path: os.path, identifier: str) -> None:
@@ -29,21 +36,24 @@ def load(
     p = np.loadtxt(path_p, delimiter=",")
     q = np.loadtxt(path_q, delimiter=",")
 
-    assert p.shape == q.shape
+    if p.shape != q.shape:
+        raise IncompatibleDataShape(f"Price data shape ({p.shape}) does not equal quantity data shape ({q.shape}).")
 
     try:
         h = np.loadtxt(path_h, delimiter=",", dtype=str)
-        assert h.shape[0] == p.shape[1]
+        if h.shape[0] != p.shape[1]:
+            raise IncompatibleDataShape(f"Header length ({h.shape[0]}) does not equal data column count ({p.shape[1]}).")
     except FileNotFoundError:
-        print("File for headers not found.")
+        logger.warning("Warning: File with header not found.")
         h = None
 
     try:
         i = np.loadtxt(path_i, delimiter=",", dtype=np.datetime64)
-        assert i.shape[0] == p.shape[0]
+        if i.shape[0] != p.shape[0]:
+            raise IncompatibleDataShape(f"Index length ({i.shape[0]}) does not equal data row count ({p.shape[0]}).")
     except FileNotFoundError:
         i = None
-        print("File for indices not found.")
+        logger.warning("Warning: File with indices not found.")
 
     return TimeSeries(p, q, h, i)
 

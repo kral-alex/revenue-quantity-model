@@ -1,84 +1,93 @@
+import logging
+
 import numpy as np
 
 from .time_series import PriceQuantity
 
 
-class NotEnoughDataError(ValueError):
+class NoPriceChangeError(ValueError):
     pass
 
 
-def last_change_slope(pq: PriceQuantity, min_count: int = 1, max_count: int = np.inf) -> float:
-    len_left, middle, len_right = find_change_range(pq)
-    if min(len_left, len_right) < min_count:
-        raise NotEnoughDataError(
-            f'Not enough data on first price change.'
-            f' Minimum required: {min_count}. Left count: {len_left}. Right count: {len_right}'
-        )
+logger = logging.getLogger(__name__)
 
-    take_count = min(len_left, len_right, max_count)
+EPSILON = 1e-9
+
+
+class ModelPQ:
+    def __init__(self, pq: PriceQuantity, min_count: int = 1, max_count: int = np.inf):
+        self.pq: PriceQuantity = pq
+        self.middles: np.ndarray[1, np.dtype[int]] = np.argwhere(abs(np.diff(self.pq.price)) > EPSILON).squeeze(axis=1)
+        self.slices = self.get_pq_slices(min_count, max_count)
+        self.results = []
+
+    @staticmethod
+    def get_range(edge_indices, index: int) -> (int, int, int):
+        return edge_indices[index], edge_indices[index + 1], edge_indices[index + 2]
+
+    def get_pq_slices(self, min_count: int, max_count: int) -> list[(PriceQuantity, int)]:
+        pq_slices = []
+        edge_indices = np.concatenate(([0], self.middles + 1, [len(self.pq) - 1]))
+        for i in range(len(self.middles)):
+            len_left, middle, len_right = self.get_range(edge_indices, i)
+            if min(middle - len_left, len_right - middle) > min_count:
+                take_count = min(middle - len_left, len_right - middle, max_count)
+                pq_slices.append((self.pq[middle - take_count: middle + take_count], take_count))
+
+        return pq_slices
+
+    def run_models(self):
+        for pq_slice, middle in self.slices:
+            self.results.append({
+                  'correlation': pq_slice.get_correlation(),
+                  'last_change_slope': last_change_slope(pq_slice, middle),
+                  'last_change_with_time_slope': last_change_with_time_slope(pq_slice, middle),
+                  'linear_model_slope': linear_model_slope(pq_slice),
+                  'linear_model_with_time_slope': linear_model_with_time_slope(pq_slice),
+            })
+        return self.results
+
+
+def calculate_PED(price, quantity, dq_by_dp):
+    return dq_by_dp * quantity / price
+
+
+def last_change_slope(pq: PriceQuantity, middle: int) -> float:
+
+    if abs(2 * middle - len(pq)) > 2:
+        logger.warning(f'Price change index provided is not in the middle for item {pq.header}')
 
     d_quantity = np.mean(
-        pq.quantity[middle: middle + take_count]
-        - pq.quantity[middle - take_count: middle]
+        pq.quantity[:middle]
+        - pq.quantity[middle:]
     )
 
-    d_price = pq.price[middle] - pq.price[middle - 1]
+    d_price = pq.price[0] - pq.price[-1]
 
     return d_quantity / d_price
 
 
-def last_change_with_time_slope(pq, min_count: int = 2, max_count: int = np.inf) -> (float, float):
-    len_left, middle, len_right = find_change_range(pq)
-    if min(len_left, len_right) < min_count:
-        raise NotEnoughDataError(
-            f'Not enough data on first price change. '
-            f'Minimum required: {min_count}. Left count: {len_left}. Right count: {len_right}'
-        )
+def last_change_with_time_slope(pq,  middle: int) -> (float, float):
 
-    take_count = min(len_left, len_right, max_count)
-    half_count = take_count // 2
+    if abs(2 * middle - len(pq)) > 1:
+        logger.warning(f'Price change index provided is not in the middle for item {pq.header}')
+
+    half_count = len(pq) // 4
     d_quantity_thin = np.mean(
         pq.quantity[middle: middle + half_count]
         - pq.quantity[middle - half_count: middle]
     )
     d_quantity_wide = np.mean(
-        pq.quantity[middle + half_count: middle + take_count]
-        - pq.quantity[middle - take_count: middle - half_count]
+        pq.quantity[middle + half_count:]
+        - pq.quantity[: middle - half_count]
     )
 
     d_quantity_t = 0.5 * d_quantity_wide - d_quantity_thin
     d_quantity_p = 2 * d_quantity_thin - 0.5 * d_quantity_wide
 
-    d_price = pq.price[middle] - pq.price[middle - 1]
+    d_price = pq.price[0] - pq.price[-1]
 
-    return d_quantity_t / take_count, d_quantity_p / d_price
-
-
-EPSILON = 1e-9
-
-
-def find_change_range(pq: PriceQuantity, n: int = -1) -> (float, float, float):
-    change_indices = np.argwhere(abs(np.diff(pq.price)) > EPSILON).squeeze(axis=1)
-    if not len(change_indices):
-        raise ValueError('No value changes found')
-
-    if n < 0:
-        n = len(change_indices) + n
-
-    if len(change_indices) <= n:
-        raise ValueError('Index out of range for value changes')
-
-    edge_indices = np.concatenate(([0], change_indices + 1, [len(pq) - 1]))
-
-    i_left = edge_indices[n]
-
-    i_middle = edge_indices[n + 1]
-
-    i_right = edge_indices[n + 2]
-
-    return (i_middle - i_left,
-            i_middle,
-            i_right - i_middle)
+    return d_quantity_t / (2 * half_count), d_quantity_p / d_price
 
 
 def linear_model_slope(pq: PriceQuantity, max_count: int = None) -> float:
@@ -105,6 +114,30 @@ def linear_model_with_time_slope(pq: PriceQuantity, max_count: int = None) -> (f
         axis=1
     )
     return tuple(train_linear_regression(x_train, pq.quantity)[0])
+
+
+def find_change_range(pq: PriceQuantity, n: int = -1) -> (float, float, float):
+    change_indices = np.argwhere(abs(np.diff(pq.price)) > EPSILON).squeeze(axis=1)
+    if not len(change_indices):
+        raise ValueError('No value changes found')
+
+    if n < 0:
+        n = len(change_indices) + n
+
+    if len(change_indices) <= n:
+        raise ValueError('Index out of range for value changes')
+
+    edge_indices = np.concatenate(([0], change_indices + 1, [len(pq) - 1]))
+
+    i_left = edge_indices[n]
+
+    i_middle = edge_indices[n + 1]
+
+    i_right = edge_indices[n + 2]
+
+    return (i_middle - i_left,
+            i_middle,
+            i_right - i_middle)
 
 
 def train_linear_regression(x_train, y_train) -> (np.ndarray[np.dtype[float]], np.ndarray[np.dtype[float]]):
