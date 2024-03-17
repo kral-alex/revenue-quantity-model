@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import numpy.typing as npt
 import numpy as np
 
-import matplotlib.pyplot as plt
+import matplotlib.pyplot
 
 
 @dataclass(frozen=True)
@@ -63,19 +63,45 @@ class PriceQuantity:
             header=pq.header
         )
 
-    def draw_scatter_graph(self, ax1, *, label=None):
+    def draw_time_axis_scatter_graph(self, ax1: matplotlib.pyplot.Axes, *, label: str = None, dates: bool = True) -> (
+            matplotlib.pyplot.Axes, matplotlib.pyplot.Axes
+    ):
         if label is None:
-            label = f'Price Quantity {self.header}'
+            label = f'Price Quantity timeseries {self.header}'
         ax1.set_title(label)
-        ax1.set_xlabel("month #")
+        if dates:
+            ax1.set_xlabel("Month")
+            price = (self.index, self.price)
+            quantity = (self.index, self.quantity)
+        else:
+            ax1.set_xlabel("Month #")
+            price = (self.price,)
+            quantity = (self.quantity,)
 
-        ax1.plot(self.price, marker='o', linestyle='none')
+        ax1.plot(*price, marker='o', linestyle='none', )
         ax2 = ax1.twinx()
-        ax2.plot(self.quantity, marker='o', linestyle='none', color='orange')
+        ax2.plot(*quantity, marker='o', linestyle='none', color='orange')
 
         ax1.set_ylabel("price [$]")
         ax2.set_ylabel("quantity")
         return ax1, ax2
+
+    def draw_scatter_graph(self, ax: matplotlib.pyplot.Axes,  *, label: str = None, economic_axis=False) -> (
+            matplotlib.pyplot.Axes):
+        if label is None:
+            label = f'Price Quantity {self.header}'
+        ax.set_title(label)
+
+        if economic_axis:
+            ax.plot(self.quantity, self.price, marker='o', linestyle='none')
+            ax.set_ylabel("price [$]")
+            ax.set_xlabel("quantity")
+        else:
+            ax.plot(self.price, self.quantity, marker='o', linestyle='none')
+            ax.set_xlabel("price [$]")
+            ax.set_ylabel("quantity")
+
+        return ax
 
     @staticmethod
     def skip_demean(array: npt.ArrayLike, period: int, offset: int = 0) -> npt.NDArray:
