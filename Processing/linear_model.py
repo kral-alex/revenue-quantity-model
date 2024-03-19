@@ -58,11 +58,11 @@ def last_change_slope(pq: PriceQuantity, middle: int) -> float:
         logger.warning(f'Price change index provided is not in the middle for item {pq.header}')
 
     d_quantity = np.mean(
-        pq.quantity[:middle]
-        - pq.quantity[middle:]
+        pq.quantity[middle:]
+        - pq.quantity[:middle]
     )
 
-    d_price = pq.price[0] - pq.price[-1]
+    d_price = pq.price[-1] - pq.price[0]
 
     return d_quantity / d_price
 
@@ -85,7 +85,7 @@ def last_change_with_time_slope(pq,  middle: int) -> (float, float):
     d_quantity_t = 0.5 * d_quantity_wide - d_quantity_thin
     d_quantity_p = 2 * d_quantity_thin - 0.5 * d_quantity_wide
 
-    d_price = pq.price[0] - pq.price[-1]
+    d_price = pq.price[-1] - pq.price[0]
 
     return d_quantity_t / (2 * half_count), d_quantity_p / d_price
 
