@@ -1,4 +1,5 @@
 import logging
+from enum import StrEnum
 
 import numpy as np
 
@@ -19,6 +20,7 @@ class ModelPQ:
         self.pq: PriceQuantity = pq
         self.middles: np.ndarray[1, np.dtype[int]] = np.argwhere(abs(np.diff(self.pq.price)) > EPSILON).squeeze(axis=1)
         self.slices = self.get_pq_slices(min_count, max_count)
+        self.correlations = [pq_slice.get_correlation() for pq_slice, _ in self.slices]
         self.results = []
 
     @staticmethod
@@ -38,18 +40,48 @@ class ModelPQ:
 
     def run_models(self):
         for pq_slice, middle in self.slices:
-            self.results.append({
-                  'correlation': pq_slice.get_correlation(),
-                  'last_change_slope': last_change_slope(pq_slice, middle),
-                  'last_change_with_time_slope': last_change_with_time_slope(pq_slice, middle),
-                  'linear_model_slope': linear_model_slope(pq_slice),
-                  'linear_model_with_time_slope': linear_model_with_time_slope(pq_slice),
-            })
+            raw_res = {
+                  Models.LastChange: last_change_slope(pq_slice, middle),
+                  Models.LastChangeWT: last_change_with_time_slope(pq_slice, middle),
+                  Models.Lin: linear_model_slope(pq_slice),
+                  Models.LinWT: linear_model_with_time_slope(pq_slice),
+                }
+            p2 = np.mean(pq_slice[middle:].price)
+            q2 = np.mean(pq_slice[middle:].quantity)
+            self.results.append(
+                {
+                    "price": {
+                      str(Models.LastChange): raw_res[Models.LastChange],
+                      str(Models.LastChangeWT): raw_res[Models.LastChangeWT][1],
+                      str(Models.Lin): raw_res[Models.Lin],
+                      str(Models.LinWT): raw_res[Models.LinWT][1],
+                    },
+                    "PED": {
+                        str(Models.LastChange): calculate_PED(p2, q2, raw_res[Models.LastChange]),
+                        str(Models.LastChangeWT): calculate_PED(p2, q2, raw_res[Models.LastChangeWT][1]),
+                        str(Models.Lin): calculate_PED(p2, q2, raw_res[Models.Lin]),
+                        str(Models.LinWT): calculate_PED(p2, q2, raw_res[Models.LinWT][1]),
+                    },
+                    "time": {
+                        str(Models.LastChange): 0,
+                        str(Models.LastChangeWT): raw_res[Models.LastChangeWT][0],
+                        str(Models.Lin): 0,
+                        str(Models.LinWT): raw_res[Models.LinWT][0],
+                    }
+                }
+            )
         return self.results
 
 
 def calculate_PED(price, quantity, dq_by_dp):
-    return dq_by_dp * quantity / price
+    return dq_by_dp * price / quantity
+
+
+class Models(StrEnum):
+    LastChange = 'last_change_slope'
+    LastChangeWT = 'last_change_with_time_slope'
+    Lin = 'linear_model_slope'
+    LinWT = 'linear_model_with_time_slope'
 
 
 def last_change_slope(pq: PriceQuantity, middle: int) -> float:
