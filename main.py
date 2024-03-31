@@ -30,7 +30,7 @@ for i, pq in enumerate(top_n):
     #       f'\nlinear_model_slope: {lms(pq)} ',
     #       f'\nlinear_model_with_time_slope: {lmwts(pq)} ',
     #       )
-    pq.draw_time_axis_scatter_graph(plt.subplots()[1], dates=True)
+    pq.draw_time_series_scatter_graph(plt.subplots()[1], dates=True)
 
 plt.show()
 

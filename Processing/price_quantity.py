@@ -5,6 +5,7 @@ import numpy.typing as npt
 import numpy as np
 
 import matplotlib.pyplot
+import pandas
 
 
 @dataclass(frozen=True)
@@ -31,10 +32,12 @@ class PriceQuantity:
         return np.corrcoef(self.price, y=self.quantity)[0, 1]
 
     @classmethod
-    def skip_demean_quantity(cls, pq, period: int):
+    def skip_demean_quantity(cls, pq, period: int, add_mean: bool = False):
         new_quantity = pq.quantity
         for i_offset in range(period):
             new_quantity = PriceQuantity.skip_demean(new_quantity, period, i_offset)
+        if add_mean:
+            new_quantity += np.mean(pq.quantity)
         return cls(
             price=pq.price,
             quantity=new_quantity,
@@ -63,7 +66,7 @@ class PriceQuantity:
             header=pq.header
         )
 
-    def draw_time_axis_scatter_graph(self, ax1: matplotlib.pyplot.Axes, *, label: str = None, dates: bool = True) -> (
+    def draw_time_series_scatter_graph(self, ax1: matplotlib.pyplot.Axes, *, label: str = None, dates: bool = True) -> (
             matplotlib.pyplot.Axes, matplotlib.pyplot.Axes
     ):
         if label is None:
@@ -78,7 +81,7 @@ class PriceQuantity:
             price = (self.price,)
             quantity = (self.quantity,)
 
-        ax1.plot(*price, marker='o', linestyle='none', )
+        ax1.plot(*price, marker='o', linestyle='none')
         ax2 = ax1.twinx()
         ax2.plot(*quantity, marker='o', linestyle='none', color='orange')
 
@@ -86,20 +89,57 @@ class PriceQuantity:
         ax2.set_ylabel("quantity")
         return ax1, ax2
 
-    def draw_scatter_graph(self, ax: matplotlib.pyplot.Axes,  *, label: str = None, economic_axis=False) -> (
-            matplotlib.pyplot.Axes):
+    def draw_scatter_graph(self, ax: matplotlib.pyplot.Axes,  *, label: str = None, economic_axis=False, revenue=False,
+                           color: str = None) -> matplotlib.pyplot.Axes:
         if label is None:
             label = f'Price Quantity {self.header}'
         ax.set_title(label)
 
         if economic_axis:
-            ax.plot(self.quantity, self.price, marker='o', linestyle='none')
-            ax.set_ylabel("price [$]")
-            ax.set_xlabel("quantity")
+            x = self.quantity
+            y = self.price if not revenue else self.quantity * self.price
+            x_label = "quantity"
+            y_label = "price [$]" if not revenue else "revenue [$]"
         else:
-            ax.plot(self.price, self.quantity, marker='o', linestyle='none')
-            ax.set_xlabel("price [$]")
-            ax.set_ylabel("quantity")
+            x = self.price
+            y = self.quantity if not revenue else self.quantity * self.price
+            x_label = "price [$]"
+            y_label = "quantity" if not revenue else "revenue [$]"
+
+        ax.plot(x, y, marker='o', linestyle='none', color=color)
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+
+        return ax
+
+    def draw_std_graph(self, ax: matplotlib.pyplot.Axes,  *, label: str = None, economic_axis=False, revenue=False,
+                       color: str = None) -> matplotlib.pyplot.Axes:
+        if label is None:
+            label = f'Price Quantity {self.header}'
+        ax.set_title(label)
+        pd = pandas.DataFrame(data=[self.price, self.quantity]).transpose()
+        pd = pd.groupby(pd[0].round(3))
+        pd_mean = pd.agg(func='mean')
+        pd_std = pd.agg(func='std')
+
+        if economic_axis:
+            x = pd_mean[1]
+            y = pd_mean[0] if not revenue else pd_mean[0] * pd_mean[1]
+            x_error = pd_std[1] if not revenue else pd_mean[0] * pd_std[1]
+            y_error = None
+            x_label = "quantity"
+            y_label = "price [$]" if not revenue else "revenue [$]"
+        else:
+            x = pd_mean[0]
+            y = pd_mean[1] if not revenue else pd_mean[1] * pd_mean[0]
+            x_error = None
+            y_error = pd_std[1] if not revenue else pd_mean[0] * pd_std[1]
+            x_label = "price [$]"
+            y_label = "quantity" if not revenue else "revenue [$]"
+
+        ax.errorbar(x, y, xerr=x_error, yerr=y_error, color=color, capsize=6, marker='o', linestyle='none')
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
 
         return ax
 

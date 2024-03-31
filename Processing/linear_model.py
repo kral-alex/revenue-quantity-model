@@ -67,7 +67,8 @@ class ModelPQ:
                         str(Models.LastChangeWT): raw_res[Models.LastChangeWT][0],
                         str(Models.Lin): 0,
                         str(Models.LinWT): raw_res[Models.LinWT][0],
-                    }
+                    },
+                    "revenue": calculate_mean_revenue(pq_slice[middle:])
                 }
             )
         return self.results
@@ -75,6 +76,10 @@ class ModelPQ:
 
 def calculate_PED(price, quantity, dq_by_dp):
     return dq_by_dp * price / quantity
+
+
+def calculate_mean_revenue(pq: PriceQuantity):
+    return pq.price @ pq.quantity.transpose() / len(pq)
 
 
 class Models(StrEnum):
