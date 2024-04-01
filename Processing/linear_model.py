@@ -114,13 +114,13 @@ def last_change_with_time_slope(pq,  middle: int) -> (float, float):
         pq.quantity[middle: middle + half_count]
         - pq.quantity[middle - half_count: middle]
     )
-    d_quantity_wide = np.mean(
-        pq.quantity[middle + half_count:]
-        - pq.quantity[: middle - half_count]
-    )
+    d_quantity_time_firsts = np.mean((pq.quantity[:half_count], pq.quantity[middle: middle + half_count]))
 
-    d_quantity_t = 0.5 * d_quantity_wide - d_quantity_thin
-    d_quantity_p = 2 * d_quantity_thin - 0.5 * d_quantity_wide
+    d_quantity_time_seconds = np.mean((pq.quantity[half_count: middle], pq.quantity[middle + half_count:]))
+
+    d_quantity_t = d_quantity_time_seconds - d_quantity_time_firsts
+
+    d_quantity_p = d_quantity_thin - 0.5 * d_quantity_t
 
     d_price = pq.price[-1] - pq.price[0]
 
