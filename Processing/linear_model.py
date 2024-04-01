@@ -19,7 +19,7 @@ class ModelPQ:
     def __init__(self, pq: PriceQuantity, min_count: int = 1, max_count: int = np.inf):
         self.pq: PriceQuantity = pq
         self.middles: np.ndarray[1, np.dtype[int]] = np.argwhere(abs(np.diff(self.pq.price)) > EPSILON).squeeze(axis=1)
-        self.slices = self.get_pq_slices(min_count, max_count)
+        self.slices: list[(PriceQuantity, int)] = self.get_pq_slices(min_count, max_count)
         self.correlations = [pq_slice.get_correlation() for pq_slice, _ in self.slices]
         self.results = []
 
@@ -68,7 +68,8 @@ class ModelPQ:
                         str(Models.Lin): 0,
                         str(Models.LinWT): raw_res[Models.LinWT][0],
                     },
-                    "revenue": calculate_mean_revenue(pq_slice[middle:])
+                    "revenue": calculate_mean_revenue(pq_slice[middle:]),
+                    "datetime": pq_slice.index[middle]
                 }
             )
         return self.results
