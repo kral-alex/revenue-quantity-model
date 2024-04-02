@@ -8,7 +8,7 @@ $ git clone https://github.com/kral-alex/revenue-quantity-model.git
 
 Poté nainstalujte dependence:
 
-$ pip install requirements.txt
+$ pip install -r requirements.txt
 
 Následně je program připraven na spuštění.
 
