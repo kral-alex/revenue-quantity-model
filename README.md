@@ -20,6 +20,8 @@ $ python3 main.py cesta_k_datům počet_k_zpracování
 
 kde cesta_k_datům je cesta ke složce se soubory 0_P.csv a 0_Q.csv, které obsahují ve formátu csv matici cen a matici kvantit s řádky v časové posloupnosti a sloupci jednotlivých produktů. Je možné poskytnout i soubory 0_H.csv a 0_I.csv obsahující názvy produtků a datetime záznamu jako řádky.
 
+počet_k_zpracování je integer a speficikuje, kolik produktů chcete zpracovat. 
+
 Výstupem z programu jsou řádky python slovníků pro každý interval změny ceny s klíči: 
 1) price a time, které obsahují slovník vypočtených koeficientů pro každou implementaci obou modelů, 
 2) klíčem PED, který obsahuje vypočtené PED pro každou implementaci obou modelů,
