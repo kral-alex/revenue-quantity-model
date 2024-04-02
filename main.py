@@ -21,7 +21,7 @@ for i, pq in enumerate(top_n):
     pq = PriceQuantity.skip_demean_quantity(pq, 12)
     pq = PriceQuantity.bin_price_absolute(pq, 0.5)
     # print(pq.price)
-    model = ModelPQ(pq, min_count=20)
+    model = ModelPQ(pq, min_count=5)
     print(model.run_models()[-1])
     # print(f'{i}.'
     #       f'\ncorrelation: {pq.get_correlation()} '
